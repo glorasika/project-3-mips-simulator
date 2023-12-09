@@ -141,7 +141,7 @@ void DIV_process(uint32_t bits) {
 void DIVU_process(uint32_t bits) {
     if (CURRENT_STATE.REGS[rt(bits)] != 0) {
         NEXT_STATE.LO = CURRENT_STATE.REGS[rs(bits)] / CURRENT_STATE.REGS[rt(bits)];
-        NEXT_STATE.HI = CURRENT_STATE.REGS[rs(bits)] / CURRENT_STATE.REGS[rt(bits)];
+        NEXT_STATE.HI = CURRENT_STATE.REGS[rs(bits)] % CURRENT_STATE.REGS[rt(bits)];
     }
 }
 
@@ -427,7 +427,7 @@ void regimm_process(uint32_t bits) {
 
 
 /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
-/*          Immediate Process           */
+/*         Immediate Processes          */
 /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
 
 void ADDI_process(uint32_t bits) {
@@ -436,6 +436,7 @@ void ADDI_process(uint32_t bits) {
 
 void ADDIU_process(uint32_t bits) {
     NEXT_STATE.REGS[rt(bits)] = convert_to_32(imm(bits), 16) + CURRENT_STATE.REGS[rs(bits)];
+    // printf("ADDIU\n");
 }
 
 void ANDI_process(uint32_t bits) {
@@ -512,20 +513,36 @@ void XORI_process(uint32_t bits) {
 
 
 /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
-/*            Branch Process            */
+/*           Branch Processes           */
 /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
 
-void BEQ_process(uint32_t bits) {}
+void BEQ_process(uint32_t bits) {
+    if (CURRENT_STATE.REGS[rs(bits)] == CURRENT_STATE.REGS[rt(bits)]) {
+        CURRENT_STATE.PC = CURRENT_STATE.PC + ((convert_to_32(imm(bits), 16) << 2) - 4);
+    }
+}
 
-void BGTZ_process(uint32_t bits) {}
+void BGTZ_process(uint32_t bits) {
+    if ((CURRENT_STATE.REGS[rs(bits)] >> 31) == 0 && CURRENT_STATE.REGS[rs(bits)] != 0) {
+        CURRENT_STATE.PC = CURRENT_STATE.PC + ((convert_to_32(imm(bits), 16) << 2) - 4);
+    }
+}
 
-void BLEZ_process(uint32_t bits) {}
+void BLEZ_process(uint32_t bits) {
+    if (((CURRENT_STATE.REGS[rs(bits)] >> 31) == 1) || (CURRENT_STATE.REGS[rs(bits)] == 0)) {
+        CURRENT_STATE.PC = CURRENT_STATE.PC + ((convert_to_32(imm(bits), 16) << 2) - 4);
+    }
+}
 
-void BNE_process(uint32_t bits) {}
+void BNE_process(uint32_t bits) {
+    if (CURRENT_STATE.REGS[rs(bits)] != CURRENT_STATE.REGS[rt(bits)]) {
+        CURRENT_STATE.PC = CURRENT_STATE.PC + ((convert_to_32(imm(bits), 16) << 2) - 4);
+    }
+}
 
 
 /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
-/*             J-Type (Jump)            */
+/*             Jump Processes           */
 /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
 
 void J_process(uint32_t bits) {
@@ -548,11 +565,9 @@ void process_instruction()
 
     uint8_t opcode = (uint8_t) (bits >> 26);
 
-    printf("Last 6-bits: %u\n", opcode);
+    // printf("Last 6-bits: %d\n", opcode);
 
     switch (opcode) {
-        RUN_BIT = 0;
-
         case ADDI:
             ADDI_process(bits);
             break;
