@@ -104,99 +104,227 @@ uint32_t get_bits_between(uint32_t bits, int start, int size)
 }
 
 
+/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
+/*                SPECIAL               */
+/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
+
+void ADD_process(uint32_t bits) {
+    NEXT_STATE.REGS[rd(bits)] = (int32_t) CURRENT_STATE.REGS[rs(bits)] + (int32_t) CURRENT_STATE.REGS[rt(bits)];
+}
+
+void ADDU_process(uint32_t bits) {
+    NEXT_STATE.REGS[rd(bits)] = CURRENT_STATE.REGS[rs(bits)] + CURRENT_STATE.REGS[rt(bits)];
+}
+
+void AND_process(uint32_t bits) {
+    NEXT_STATE.REGS[rd(bits)] = CURRENT_STATE.REGS[rs(bits)] & CURRENT_STATE.REGS[rt(bits)];
+}
+
+void DIV_process(uint32_t bits) {
+    if (CURRENT_STATE.REGS[rt(bits)] != 0) {
+        NEXT_STATE.LO = ((int32_t) CURRENT_STATE.REGS[rs(bits)]) / ((int32_t) CURRENT_STATE.REGS[rt(bits)]);
+        NEXT_STATE.HI = ((int32_t) CURRENT_STATE.REGS[rs(bits)]) % ((int32_t) CURRENT_STATE.REGS[rt(bits)]);
+    }
+}
+
+void DIVU_process(uint32_t bits) {
+    if (CURRENT_STATE.REGS[rt(bits)] != 0) {
+        NEXT_STATE.LO = CURRENT_STATE.REGS[rs(bits)] / CURRENT_STATE.REGS[rt(bits)];
+        NEXT_STATE.HI = CURRENT_STATE.REGS[rs(bits)] / CURRENT_STATE.REGS[rt(bits)];
+    }
+}
+
+void JALR_process(uint32_t bits) {
+    CURRENT_STATE.PC = CURRENT_STATE.REGS[rs(bits)] - 4;
+    NEXT_STATE.REGS[rd(bits)] = CURRENT_STATE.PC + 4;
+}
+
+void JR_process(uint32_t bits) {
+    CURRENT_STATE.PC = CURRENT_STATE.REGS[rs(bits)] - 4;
+}
+
+void MFHI_process(uint32_t bits) {
+    NEXT_STATE.REGS[rd(bits)] = CURRENT_STATE.HI;
+}
+
+void MFLO_process(uint32_t bits) {}
+
+void MTHI_process(uint32_t bits) {}
+
+void MTLO_process(uint32_t bits) {
+    NEXT_STATE.LO = CURRENT_STATE.REGS[rs(bits)];
+}
+
+void MULT_process(uint32_t bits) {
+}
+
+void MULTU_process(uint32_t bits) {}
+
+void NOR_process(uint32_t bits) {}
+
+void OR_process(uint32_t bits) {
+    NEXT_STATE.REGS[rd(bits)] = CURRENT_STATE.REGS[rs(bits)] | CURRENT_STATE.REGS[rt(bits)];
+}
+
+void SLL_process(uint32_t bits) {}
+
+void SLLV_process(uint32_t bits) {
+    NEXT_STATE.REGS[rd(bits)] = CURRENT_STATE.REGS[rt(bits)] << get_bits_between(CURRENT_STATE.REGS[rs(bits)], 0, 5);
+}
+
+void SLT_process(uint32_t bits) {
+    if ((int32_t) CURRENT_STATE.REGS[rs(bits)] < (int32_t) CURRENT_STATE.REGS[rt(bits)]) {
+        NEXT_STATE.REGS[rd(bits)] = 1;
+    }
+    else {
+        NEXT_STATE.REGS[rd(bits)] = 0;
+    }
+}
+
+void SLTU_process(uint32_t bits) {
+    if (CURRENT_STATE.REGS[rs(bits)] < CURRENT_STATE.REGS[rt(bits)]) {
+        NEXT_STATE.REGS[rd(bits)] = 1;
+    }
+    else {
+        NEXT_STATE.REGS[rd(bits)] = 0;
+    }
+}
+
+void SRA_process(uint32_t bits) {}
+
+void SRAV_process(uint32_t bits) {
+    NEXT_STATE.REGS[rd(bits)] = (int32_t) CURRENT_STATE.REGS[rt(bits)] >> get_bits_between(CURRENT_STATE.REGS[rs(bits)], 0, 5);
+}
+
+void SRL_process(uint32_t bits) {}
+
+void SRLV_process(uint32_t bits) {
+    NEXT_STATE.REGS[rd(bits)] = get_bits_between(CURRENT_STATE.REGS[rt(bits)] >> get_bits_between(CURRENT_STATE.REGS[rs(bits)], 0, 5), 0, (32 - get_bits_between(CURRENT_STATE.REGS[rs(bits)], 0, 5)));
+}
+
+void SUB_process(uint32_t bits) {
+    NEXT_STATE.REGS[rd(bits)] = (int32_t) CURRENT_STATE.REGS[rs(bits)] - (int32_t) CURRENT_STATE.REGS[rt(bits)];
+}
+
+void SUBU_process(uint32_t bits) {
+    NEXT_STATE.REGS[rd(bits)] = CURRENT_STATE.REGS[rs(bits)] - CURRENT_STATE.REGS[rt(bits)];
+}
+
+void XOR_process(uint32_t bits) {}
+
+void SYSCALL_process(uint32_t bits) {}
+
+
 void special_process(uint32_t bits) {
     uint8_t speicalOpcode = (uint8_t) (bits & 0x3F);
-    uint8_t rs;
-    uint8_t rt;
-    uint8_t rd;
-    uint8_t sa;
 
     switch (speicalOpcode) {
         case ADD:
-            NEXT_STATE.REGS[rd(bits)] = CURRENT_STATE.REGS[rs(bits)] & CURRENT_STATE.REGS[rt(bits)];
+            ADD_process(bits);
             break;
 
         case ADDU:
+            ADDU_process(bits);
             break;
 
         case AND:
+            AND_process(bits);
             break;
 
         case DIV:
+            DIV_process(bits);
             break;
 
         case DIVU:
+            DIVU_process(bits);
             break;
 
         case JALR:
+            JALR_process(bits);
             break;
 
         case JR:
+            JR_process(bits);
             break;
         
         case MFHI:
+            MFHI_process(bits);
             break;
 
         case MFLO:
+            MFLO_process(bits);
             break;
 
         case MTHI:
+            MTHI_process(bits);
             break;
 
         case MTLO:
+            MTLO_process(bits);
             break;
 
         case MULT:
+            MULT_process(bits);
             break;
 
         case MULTU:
+            MULTU_process(bits);
             break;
 
         case NOR:
+            NOR_process(bits);
             break;
         
         case OR:
-            NEXT_STATE.REGS[rd(bits)] = CURRENT_STATE.REGS[rs(bits)] | CURRENT_STATE.REGS[rt(bits)];
+            OR_process(bits);
             break;
 
         case SLL:
-            NEXT_STATE.REGS[rd(bits)] = CURRENT_STATE.REGS[rt(bits) << sa(bits)];
+            SLL_process(bits);
             break;
 
         case SLLV:
+            SLLV_process(bits);
             break;
 
         case SLT:
+            SLT_process(bits);
             break;
 
         case SLTU:
+            SLTU_process(bits);
             break;
 
         case SRA:
+            SRA_process(bits);
             break;
 
         case SRAV:
+            SRAV_process(bits);
             break;
 
         case SRL:
+            SRL_process(bits);
             break;
 
         case SRLV:
+            SRLV_process(bits);
             break;
 
         case SUB:
+            SUB_process(bits);
             break;
 
         case SUBU:
-            NEXT_STATE.REGS[rd(bits)] = CURRENT_STATE.REGS[rs(bits)] - CURRENT_STATE.REGS[rt(bits)];
+            SUBU_process(bits);
             break;
         
         case XOR:
-            NEXT_STATE.REGS[rd(bits)] = CURRENT_STATE.REGS[rs(bits)] ^ CURRENT_STATE.REGS[rt(bits)];
+            XOR_process(bits);
             break;
 
         case SYSCALL:
-            RUN_BIT = 0;
+            SYSCALL_process(bits);
             break;
 
         default:
