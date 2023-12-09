@@ -15,6 +15,7 @@
 #define LUI 0b001111
 #define LW 0b100011
 #define ORI 0b001101
+
 #define SB 0b101000
 #define SH 0b101001
 #define SLTI 0b001010
@@ -68,7 +69,6 @@
 #define MULTU 0b011001
 #define NOR 0b100111
 #define OR 0b100101
-
 #define SLL 0b000000
 #define SLLV 0b000100
 #define SLT 0b101010
@@ -88,23 +88,210 @@
 #define SYSCALL 0b001100
 
 
+#define cast(T, V) ((T) V)
+#define MASK(n) cast(uint32_t, (~(0xFFFFFFFF << n)))
+
+#define rs(bits) (get_bits_between(bits, 21, 5))
+#define rt(bits) (get_bits_between(bits, 16, 5))
+#define rd(bits) (get_bits_between(bits, 11, 5))
+#define imm(bits) (get_bits_between(bits, 0, 16))
+#define sa(bits) (get_bits_between(bits, 6, 5))
+
+
+uint32_t get_bits_between(uint32_t bits, int start, int size)
+{
+    return (bits >> start) & MASK(size);
+}
+
+
+void special_process(uint32_t bits) {
+    uint8_t speicalOpcode = (uint8_t) (bits & 0x3F);
+    uint8_t rs;
+    uint8_t rt;
+    uint8_t rd;
+    uint8_t sa;
+
+    switch (speicalOpcode) {
+        case ADD:
+            NEXT_STATE.REGS[rd(bits)] = CURRENT_STATE.REGS[rs(bits)] & CURRENT_STATE.REGS[rt(bits)];
+            break;
+
+        case ADDU:
+            break;
+
+        case AND:
+            break;
+
+        case DIV:
+            break;
+
+        case DIVU:
+            break;
+
+        case JALR:
+            break;
+
+        case JR:
+            break;
+        
+        case MFHI:
+            break;
+
+        case MFLO:
+            break;
+
+        case MTHI:
+            break;
+
+        case MTLO:
+            break;
+
+        case MULT:
+            break;
+
+        case MULTU:
+            break;
+
+        case NOR:
+            break;
+        
+        case OR:
+            NEXT_STATE.REGS[rd(bits)] = CURRENT_STATE.REGS[rs(bits)] | CURRENT_STATE.REGS[rt(bits)];
+            break;
+
+        case SLL:
+            NEXT_STATE.REGS[rd(bits)] = CURRENT_STATE.REGS[rt(bits) << sa(bits)];
+            break;
+
+        case SLLV:
+            break;
+
+        case SLT:
+            break;
+
+        case SLTU:
+            break;
+
+        case SRA:
+            break;
+
+        case SRAV:
+            break;
+
+        case SRL:
+            break;
+
+        case SRLV:
+            break;
+
+        case SUB:
+            break;
+
+        case SUBU:
+            NEXT_STATE.REGS[rd(bits)] = CURRENT_STATE.REGS[rs(bits)] - CURRENT_STATE.REGS[rt(bits)];
+            break;
+        
+        case XOR:
+            NEXT_STATE.REGS[rd(bits)] = CURRENT_STATE.REGS[rs(bits)] ^ CURRENT_STATE.REGS[rt(bits)];
+            break;
+
+        case SYSCALL:
+            RUN_BIT = 0;
+            break;
+
+        default:
+            break;
+    }
+}
+
+
 void process_instruction()
 {
     /* execute one instruction here. You should use CURRENT_STATE and modify
      * values in NEXT_STATE. You can call mem_read_32() and mem_write_32() to
      * access memory. */
 
-    uint32_t instruction = mem_read_32(CURRENT_STATE.PC);
+    uint32_t bits = mem_read_32(CURRENT_STATE.PC);
 
-    uint8_t opcode = (uint8_t)(instruction >> 26);
-    uint8_t special = (uint8_t)(instruction & 0x3F);
+    uint8_t opcode = (uint8_t) (bits >> 26);
 
-    printf("First 6-bits: %u\n", special);
     printf("Last 6-bits: %u\n", opcode);
 
-    // check for syscall
-    if (opcode == 0 && special == 12) {
+    switch (opcode) {
         RUN_BIT = 0;
+
+        case ADDI:
+            break;
+
+        case ADDIU:
+            break;
+
+        case ANDI:
+            break;
+
+        case LB:
+            break;
+
+        case LBU:
+            break;
+
+        case LHU:
+            break;
+
+        case LUI:
+            break;
+
+        case LW:
+            break;
+
+        case ORI:
+            break;
+        
+        case SB:
+            break;
+
+        case SH:
+            break;
+
+        case SLTI:
+            break;
+
+        case SLTIU:
+            break;
+
+        case SW:
+            break;
+
+        case XORI:
+            break;
+
+        case BEQ:
+            break;
+
+        case BGTZ:
+            break;
+
+        case BLEZ:
+            break;
+
+        case BNE:
+            break;
+
+        case J:
+            break;
+
+        case JAI:
+            break;
+
+        case REGIMM:
+            break;
+
+        case SPECIAL:
+            special_process(bits);
+            break;
+
+        default:
+            break;
     }
 
     // update program counter for next instruction
