@@ -405,15 +405,19 @@ void regimm_process(uint32_t bits) {
 
     switch (regimmOpcode) {
         case BGEZ:
+            BGEZ_process(bits);
             break;
 
         case BGEZAL:
+            BGEZAL_process(bits);
             break;
 
         case BLTZ:
+            BLTZ_process(bits);
             break;
 
         case BLTZAL:
+            BLTZAL_process(bits);
             break;
 
         default:
@@ -438,30 +442,69 @@ void ANDI_process(uint32_t bits) {
     NEXT_STATE.REGS[rt(bits)] = CURRENT_STATE.REGS[rs(bits)] & imm(bits);
 }
 
-void LB_process(uint32_t bits) {}
-
-void LBU_process(uint32_t bits) {}
-
-void LH_process(uint32_t bits) {}
-
-void LHU_process(uint32_t bits) {}
-
-void LUI_process(uint32_t bits) {
+void LB_process(uint32_t bits) {
+    uint32_t vAddr = mem_read_32(convert_to_32(imm(bits), 16) + CURRENT_STATE.REGS[base(bits)]);
+    NEXT_STATE.REGS[rt(bits)] = convert_to_32(get_bits_between(vAddr, 0, 8), 8);
 }
 
-void LW_process(uint32_t bits) {}
+void LBU_process(uint32_t bits) {
+    uint32_t vAddr = mem_read_32(convert_to_32(imm(bits), 16) + CURRENT_STATE.REGS[base(bits)]);
+    NEXT_STATE.REGS[rt(bits)] = get_bits_between(vAddr, 0, 8);
+}
 
-void ORI_process(uint32_t bits) {}
+void LH_process(uint32_t bits) {
+    uint32_t vAddr = mem_read_32(convert_to_32(imm(bits), 16) + CURRENT_STATE.REGS[base(bits)]);
+    NEXT_STATE.REGS[rt(bits)] = convert_to_32(get_bits_between(vAddr, 0, 16), 16);
+}
 
-void SB_process(uint32_t bits) {}
+void LHU_process(uint32_t bits) {
+    uint32_t vAddr = mem_read_32(convert_to_32(imm(bits), 16) + CURRENT_STATE.REGS[base(bits)]);
+    NEXT_STATE.REGS[rt(bits)] = get_bits_between(vAddr, 0, 16);
+}
 
-void SH_process(uint32_t bits) {}
+void LUI_process(uint32_t bits) {
+    NEXT_STATE.REGS[rt(bits)] = imm(bits) << 16;
+}
 
-void SLTI_process(uint32_t bits) {}
+void LW_process(uint32_t bits) {
+    NEXT_STATE.REGS[rt(bits)] = mem_read_32(convert_to_32(imm(bits), 16) + CURRENT_STATE.REGS[base(bits)]);
+}
 
-void SLTIU_process(uint32_t bits) {}
+void ORI_process(uint32_t bits) {
+    NEXT_STATE.REGS[rt(bits)] = imm(bits) | CURRENT_STATE.REGS[rs(bits)];
+}
 
-void SW_process(uint32_t bits) {}
+void SB_process(uint32_t bits) {
+    mem_write_32(convert_to_32(imm(bits), 16) + CURRENT_STATE.REGS[base(bits)], get_bits_between(CURRENT_STATE.REGS[rt(bits)], 0, 8));
+}
+
+void SH_process(uint32_t bits) {
+    mem_write_32(convert_to_32(imm(bits), 16) + CURRENT_STATE.REGS[base(bits)], get_bits_between(CURRENT_STATE.REGS[rt(bits)], 0, 16));
+}
+
+void SLTI_process(uint32_t bits) {
+    CURRENT_STATE.REGS[rs(bits)] -= (int32_t) convert_to_32(imm(bits), 16);
+    if ((int32_t) CURRENT_STATE.REGS[rs(bits)] < (int32_t) convert_to_32(imm(bits), 16)) {
+        NEXT_STATE.REGS[rt(bits)] = 1;
+    }
+    else {
+        NEXT_STATE.REGS[rt(bits)] = 0;
+    }
+}
+
+void SLTIU_process(uint32_t bits) {
+    CURRENT_STATE.REGS[rs(bits)] -= convert_to_32(imm(bits), 16);
+    if (CURRENT_STATE.REGS[rs(bits)] < convert_to_32(imm(bits), 16)) {
+        NEXT_STATE.REGS[rt(bits)] = 1;
+    }
+    else {
+        NEXT_STATE.REGS[rt(bits)] = 0;
+    }
+}
+
+void SW_process(uint32_t bits) {
+    mem_write_32(convert_to_32(imm(bits), 16) + CURRENT_STATE.REGS[base(bits)], CURRENT_STATE.REGS[rt(bits)]);
+}
 
 void XORI_process(uint32_t bits) {
     NEXT_STATE.REGS[rt(bits)] = CURRENT_STATE.REGS[rs(bits)] ^ imm(bits);
